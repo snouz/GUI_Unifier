@@ -25,28 +25,60 @@ local function get_processed_mods()
     return processed
 end
 
+local function setup_player(player)
+    if not player or not player.valid then 
+        logging.warning("Player", "Attempted to setup invalid player", game.get_player(1))
+        return 
+    end
+    
+    logging.debug("Player", "Setting up player: " .. player.name, player)
+    if not global.player then global.player = {} end
+    if not global.player[player.index] then
+        global.player[player.index] = {
+            checknexttick = 0
+        }
+        logging.info("Player", "Initialized new player state for: " .. player.name, player)
+    end
+end
+
 -- Initialize or reset the global state
 local function ensure_global_state()
     -- First create the global table if it doesn't exist
     if not global then
         global = {}
+        logging.info("State", "Recreated global table", game.get_player(1))
     end
     
     -- Then initialize core global tables if they don't exist
     if not global.player then
         global.player = {}
+        logging.info("State", "Recreated player table", game.get_player(1))
     end
+    
     if not global.gubuttonarray then
         global.gubuttonarray = {}
+        logging.info("State", "Recreated button array", game.get_player(1))
     end
+    
     if not global.window_states then
         global.window_states = {}
+        logging.info("State", "Recreated window states", game.get_player(1))
     end
     
     -- Handle edge case where array might be empty but initialized
     if not next(global.gubuttonarray) then
         global.gubuttonarray = {}
         logging.info("State", "Created empty button array", game.get_player(1))
+    end
+    
+    -- Ensure all connected players have valid entries
+    if game and game.players then
+        for _, player in pairs(game.players) do
+            if player and player.valid and not global.player[player.index] then
+                setup_player(player)
+                logging.info("State", "Setup missing player " .. player.index, game.get_player(1))
+            end
+        end
     end
 end
 
@@ -91,22 +123,6 @@ function init_button_array()
     migrate_button_array()
     
     logging.info("Init", "Completed init_button_array", game.get_player(1))
-end
-
-local function setup_player(player)
-    if not player or not player.valid then 
-        logging.warning("Player", "Attempted to setup invalid player", game.get_player(1))
-        return 
-    end
-    
-    logging.debug("Player", "Setting up player: " .. player.name, player)
-    if not global.player then global.player = {} end
-    if not global.player[player.index] then
-        global.player[player.index] = {
-            checknexttick = 0
-        }
-        logging.info("Player", "Initialized new player state for: " .. player.name, player)
-    end
 end
 
 local function set_button_sprite(button, spritepath)
@@ -988,6 +1004,9 @@ local function on_hivemindchange(event)
 end
 
 local function on_built(event)
+    -- Ensure global state is initialized
+    ensure_global_state()
+    
     -- Log all build events for debugging
     if event and event.created_entity then
         logging.debug("Build Event", string.format(
@@ -1003,6 +1022,11 @@ local function on_built(event)
         if event and event.created_entity and event.created_entity.name == "gui-signal-display" then
             -- Create the button for all players if it doesn't exist
             for _, player in pairs(game.players) do
+                -- Ensure player state exists
+                if not global.player[player.index] then
+                    setup_player(player)
+                end
+                
                 local button_flow = mod_gui.get_button_flow(player)
                 local gu_button_style_setting = settings.get_player_settings(player)["gu_button_style_setting"].value or "slot_button_notext"
                 
@@ -1026,7 +1050,7 @@ local function on_built(event)
                 
                 -- Set the check counter to force an update
                 if global.player[player.index] then
-                    global.player[player.index].checknexttick = global.player[player.index].checknexttick + 1
+                    global.player[player.index].checknexttick = (global.player[player.index].checknexttick or 0) + 1
                 end
             end
         end

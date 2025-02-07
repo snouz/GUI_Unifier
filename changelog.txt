@@ -1,4 +1,18 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.0.1
+Date: 2025-02-07
+  Changes:
+    - Added improved error handling and logging in event handlers
+    - Enhanced state validation in ensure_global_state function
+    - Added additional safety checks for player state initialization
+  Bugfixes:
+    - Fixed "attempt to index global 'nil'" crashes in on_built_entity event
+    - Added safety checks to prevent crashes during rapid entity placement
+    - Added validation to prevent nil global state issues
+    - Fixed "attempt to call global 'setup_player' (a nil value)" error on configuration changed
+  Info:
+    - If you encounter any crashes, please enable DEBUG logging in the mod settings and report the issue with your Factorio log file
+---------------------------------------------------------------------------------------------------
 Version: 2.0.0
 Date: 2025-01-21
   Features:
