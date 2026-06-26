@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.0.2
+Date: 2026-06-23
+  Info:
+    - Updated to 2.1
+---------------------------------------------------------------------------------------------------
 Version: 2.0.1
 Date: 2025-02-07
   Changes:
@@ -15,7 +20,7 @@ Date: 2025-02-07
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.0
 Date: 2025-01-21
-  Features:
+  Changes:
     - Added support for Quick Item Menu mod
     - Added support for Visual Signals mod
     - Added comprehensive logging system with configurable levels (DEBUG, INFO, WARNING, ERROR)
@@ -24,7 +29,6 @@ Date: 2025-01-21
     - Added extensive diagnostic and debug logging capabilities
     - Added robust state validation and recovery mechanisms
     - Added improved button initialization and management system
-  Changes:
     - Updated for Factorio 2.0 compatibility
     - Replaced game.active_mods with script.active_mods
     - Updated frame styles to use Factorio 2.0's built-in styles
