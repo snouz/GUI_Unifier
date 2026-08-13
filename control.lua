@@ -627,8 +627,9 @@ local function update_frame_style(event)
     
     if player.gui and player.gui.top and player.gui.top.mod_gui_top_frame and player.gui.top.mod_gui_top_frame.mod_gui_inner_frame then
         if gu_frame_style_setting == "snouz_normal_frame_style" then
-            player.gui.top.mod_gui_top_frame.style = "frame"  -- Using built-in frame style
-            player.gui.top.mod_gui_top_frame.mod_gui_inner_frame.style = "inside_shallow_frame"
+            -- Vanilla mod-gui styles, see core/lualib/mod-gui.lua
+            player.gui.top.mod_gui_top_frame.style = "slot_window_frame"
+            player.gui.top.mod_gui_top_frame.mod_gui_inner_frame.style = "mod_gui_inside_deep_frame"
         elseif gu_frame_style_setting == "snouz_barebone_frame_style" then
             player.gui.top.mod_gui_top_frame.style = "snouz_invisible_frame"
             player.gui.top.mod_gui_top_frame.mod_gui_inner_frame.style = "snouz_barebone_frame"
