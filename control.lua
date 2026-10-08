@@ -15,8 +15,8 @@ end
 -- Set to keep track of mods we've already processed
 local function get_processed_mods()
     local processed = {}
-    if global.gubuttonarray then
-        for _, entry in pairs(global.gubuttonarray) do
+    if storage.gubuttonarray then
+        for _, entry in pairs(storage.gubuttonarray) do
             if entry[1] then  -- Mod name is first element
                 processed[entry[1]] = true
             end
@@ -32,9 +32,9 @@ local function setup_player(player)
     end
     
     logging.debug("Player", "Setting up player: " .. player.name, player)
-    if not global.player then global.player = {} end
-    if not global.player[player.index] then
-        global.player[player.index] = {
+    if not storage.player then storage.player = {} end
+    if not storage.player[player.index] then
+        storage.player[player.index] = {
             checknexttick = 0
         }
         logging.info("Player", "Initialized new player state for: " .. player.name, player)
@@ -44,37 +44,37 @@ end
 -- Initialize or reset the global state
 local function ensure_global_state()
     -- First create the global table if it doesn't exist
-    if not global then
-        global = {}
+    if not storage then
+        storage = {}
         logging.info("State", "Recreated global table", game.get_player(1))
     end
     
     -- Then initialize core global tables if they don't exist
-    if not global.player then
-        global.player = {}
+    if not storage.player then
+        storage.player = {}
         logging.info("State", "Recreated player table", game.get_player(1))
     end
     
-    if not global.gubuttonarray then
-        global.gubuttonarray = {}
+    if not storage.gubuttonarray then
+        storage.gubuttonarray = {}
         logging.info("State", "Recreated button array", game.get_player(1))
     end
     
-    if not global.window_states then
-        global.window_states = {}
+    if not storage.window_states then
+        storage.window_states = {}
         logging.info("State", "Recreated window states", game.get_player(1))
     end
     
     -- Handle edge case where array might be empty but initialized
-    if not next(global.gubuttonarray) then
-        global.gubuttonarray = {}
+    if not next(storage.gubuttonarray) then
+        storage.gubuttonarray = {}
         logging.info("State", "Created empty button array", game.get_player(1))
     end
     
     -- Ensure all connected players have valid entries
     if game and game.players then
         for _, player in pairs(game.players) do
-            if player and player.valid and not global.player[player.index] then
+            if player and player.valid and not storage.player[player.index] then
                 setup_player(player)
                 logging.info("State", "Setup missing player " .. player.index, game.get_player(1))
             end
@@ -87,7 +87,7 @@ local function build_button_array()
     ensure_global_state()
     
     -- Clear existing array to prevent duplicates
-    global.gubuttonarray = {}
+    storage.gubuttonarray = {}
     
     -- Process each icon definition using our stored icons variable
     for _, icon in pairs(icons) do
@@ -96,19 +96,19 @@ local function build_button_array()
         -- Process all icons, even those we've seen before
         if mod_name and script.active_mods[mod_name] then
             logging.debug("Buttons", "Adding button for mod: " .. mod_name, game.get_player(1))
-            table.insert(global.gubuttonarray, icon)
+            table.insert(storage.gubuttonarray, icon)
         end
     end
     
-    logging.info("Buttons", "Completed build_button_array with " .. #global.gubuttonarray .. " buttons", game.get_player(1))
+    logging.info("Buttons", "Completed build_button_array with " .. #storage.gubuttonarray .. " buttons", game.get_player(1))
 end
 
 -- For migration compatibility
 local function migrate_button_array()
-    if global and global.gubuttonarray and #global.gubuttonarray == 0 then
+    if storage and storage.gubuttonarray and #storage.gubuttonarray == 0 then
         logging.info("Migration", "Performing button array migration", game.get_player(1))
         -- Only add empty entry if array is completely empty
-        global.gubuttonarray = {{}}
+        storage.gubuttonarray = {{}}
     end
 end
 
@@ -174,8 +174,8 @@ local function update_window_state(player, button, windowtocheck)
     end
     
     -- Update stored state
-    if not global.window_states[window_key] ~= is_visible then
-        global.window_states[window_key] = is_visible
+    if not storage.window_states[window_key] ~= is_visible then
+        storage.window_states[window_key] = is_visible
         return true -- State changed
     end
     return false
@@ -220,7 +220,7 @@ local function change_one_icon(player, sprite, button, tooltip, dontreplacesprit
     -- Check window state
     if windowtocheck then
         local window_key = player.index .. "_" .. button
-        if global.window_states[window_key] then
+        if storage.window_states[window_key] then
             gu_button_style_setting = gu_button_style_setting .. "_selected"
         end
     end
@@ -297,8 +297,8 @@ local function fix_buttons(player)
 	if not player or not player.valid then return end
 	local button_flow = mod_gui.get_button_flow(player)
 
-	if not global.gubuttonarray then build_button_array() end
-	for _, k in pairs(global.gubuttonarray) do
+	if not storage.gubuttonarray then build_button_array() end
+	for _, k in pairs(storage.gubuttonarray) do
 		if k[1] == nil or script.active_mods[k[1]] then
 			change_one_icon(player, k[2], k[3], k[4], k[5], k[6], k[7])
 		end
@@ -763,25 +763,25 @@ end
 
 local function general_update()
     -- Initialize global table if it doesn't exist
-    if not global then
+    if not storage then
         logging.warning("State", "Global table is nil in general_update, reinitializing", game.get_player(1))
-        global = {}
+        storage = {}
     end
     
     -- Initialize global.player if it doesn't exist
-    if not global.player then
+    if not storage.player then
         logging.warning("State", "Global.player table is nil in general_update, reinitializing", game.get_player(1))
-        global.player = {}
+        storage.player = {}
     end
 
     -- Then process all players
     for _, player in pairs(game.players) do
         if player and player.valid then
-            if not global.player[player.index] then 
+            if not storage.player[player.index] then 
                 logging.debug("Player", "Setting up missing player in general_update: " .. player.name, player)
                 setup_player(player) 
             end
-            global.player[player.index].checknexttick = global.player[player.index].checknexttick + 1
+            storage.player[player.index].checknexttick = storage.player[player.index].checknexttick + 1
         end
     end
 end
@@ -795,35 +795,35 @@ local function general_update_event(event)
     end
 
     -- Initialize global if it doesn't exist
-    if not global then
+    if not storage then
         logging.warning("State", "Global table is nil in general_update_event, reinitializing", player)
-        global = {}
+        storage = {}
     end
 
     -- Initialize global.player if it doesn't exist
-    if not global.player then
+    if not storage.player then
         logging.warning("State", "Global.player table is nil in general_update_event, reinitializing", player)
-        global.player = {}
+        storage.player = {}
     end
     
     -- Check if button array needs initialization
-    if not global.gubuttonarray or #global.gubuttonarray == 0 then
+    if not storage.gubuttonarray or #storage.gubuttonarray == 0 then
         logging.info("Buttons", "Button array empty during update, reinitializing", player)
         init_button_array()
     end
 
     -- Setup player if needed and increment check counter
-    if not global.player[event.player_index] then
+    if not storage.player[event.player_index] then
         logging.debug("Player", "Setting up player " .. player.name, player)
         setup_player(player)
     end
 
     -- Verify setup succeeded
-    if global.player[event.player_index] then
-        global.player[event.player_index].checknexttick = global.player[event.player_index].checknexttick + 1
+    if storage.player[event.player_index] then
+        storage.player[event.player_index].checknexttick = storage.player[event.player_index].checknexttick + 1
     else
         logging.error("Player", "Failed to setup player " .. player.name .. ", creating minimal state", player)
-        global.player[event.player_index] = {
+        storage.player[event.player_index] = {
             checknexttick = 1
         }
     end
@@ -901,10 +901,10 @@ local function on_player_joined(event)
     if not status then
         logging.error("Event", "Error in general_update_event during player join: " .. tostring(err), player)
         -- Attempt recovery
-        if not global then global = {} end
-        if not global.player then global.player = {} end
-        if not global.player[event.player_index] then
-            global.player[event.player_index] = {
+        if not storage then storage = {} end
+        if not storage.player then storage.player = {} end
+        if not storage.player[event.player_index] then
+            storage.player[event.player_index] = {
                 checknexttick = 0
             }
         end
@@ -927,7 +927,7 @@ end
 
 local function on_gui_click(event)
     -- Skip if we're not properly initialized
-    if not global then 
+    if not storage then 
         logging.warning("State", "Skipping on_gui_click - global not initialized", game.get_player(1))
         return 
     end
@@ -936,13 +936,13 @@ local function on_gui_click(event)
     if not player or not player.valid then return end
     
     -- Ensure player state exists
-    if not global.player[player.index] then
+    if not storage.player[player.index] then
         setup_player(player)
     end
     
     if script.active_mods["YARM"] then update_yarm_button(event) end
 
-    global.player[player.index].checknexttick = global.player[player.index].checknexttick + 1
+    storage.player[player.index].checknexttick = storage.player[player.index].checknexttick + 1
 
     -- More defensive clock GUI check
     if script.active_mods["clock"] then
@@ -998,8 +998,8 @@ end
 local function on_hivemindchange(event)
 	if script.active_mods["Hive_Mind"] or script.active_mods["Hive_Mind_Remastered"] then
 		if not event.player_index then return end
-		if not global.player or not global.player[event.player_index] then setup_player(game.players[event.player_index]) end
-		global.player[event.player_index].checknexttick = global.player[event.player_index].checknexttick + 1
+		if not storage.player or not storage.player[event.player_index] then setup_player(game.players[event.player_index]) end
+		storage.player[event.player_index].checknexttick = storage.player[event.player_index].checknexttick + 1
 	end
 end
 
@@ -1023,7 +1023,7 @@ local function on_built(event)
             -- Create the button for all players if it doesn't exist
             for _, player in pairs(game.players) do
                 -- Ensure player state exists
-                if not global.player[player.index] then
+                if not storage.player[player.index] then
                     setup_player(player)
                 end
                 
@@ -1049,8 +1049,8 @@ local function on_built(event)
                 end
                 
                 -- Set the check counter to force an update
-                if global.player[player.index] then
-                    global.player[player.index].checknexttick = (global.player[player.index].checknexttick or 0) + 1
+                if storage.player[player.index] then
+                    storage.player[player.index].checknexttick = (storage.player[player.index].checknexttick or 0) + 1
                 end
             end
         end
@@ -1058,7 +1058,7 @@ local function on_built(event)
 
     -- Rest of the existing on_built code...
     if script.active_mods["Teleportation_Redux"] then
-        if not global.Teleportation_Redux_built then
+        if not storage.Teleportation_Redux_built then
             if event and event.created_entity and event.created_entity.name == "teleportation-beacon" then
                 for _,player in pairs(game.players) do
                     local button_flow = mod_gui.get_button_flow(player)
@@ -1072,15 +1072,15 @@ local function on_built(event)
                             tooltip = {'guiu.teleportation_button'},
                         }
                     end
-                    global.player[player.index].checknexttick = global.player[player.index].checknexttick + 1
+                    storage.player[player.index].checknexttick = storage.player[player.index].checknexttick + 1
                 end
-                global.Teleportation_Redux_built = true
+                storage.Teleportation_Redux_built = true
             end
         end
     end
 
     if script.active_mods["PersonalTeleporter"] then
-        if not global.PersonalTeleporter_built then
+        if not storage.PersonalTeleporter_built then
             if event and event.created_entity and event.created_entity.name == "Teleporter_Beacon" then
                 for _,player in pairs(game.players) do
                     local button_flow = mod_gui.get_button_flow(player)
@@ -1094,9 +1094,9 @@ local function on_built(event)
                             tooltip = {'guiu.teleportation_button'},
                         }
                     end
-                    global.player[player.index].checknexttick = global.player[player.index].checknexttick + 1
+                    storage.player[player.index].checknexttick = storage.player[player.index].checknexttick + 1
                 end
-                global.PersonalTeleporter_built = true
+                storage.PersonalTeleporter_built = true
             end
         end
     end
@@ -1104,7 +1104,7 @@ end
 
 local function on_gui_closed(event)
     -- Skip if we're not properly initialized
-    if not global then 
+    if not storage then 
         logging.warning("State", "Skipping on_gui_closed - global not initialized", game.get_player(1))
         return 
     end
@@ -1113,13 +1113,13 @@ local function on_gui_closed(event)
     if not player or not player.valid then return end
     
     -- Ensure player state exists
-    if not global.player[player.index] then
+    if not storage.player[player.index] then
         setup_player(player)
     end
     
     -- Only process window states if gubuttonarray exists
-    if global.gubuttonarray then
-        for _, entry in pairs(global.gubuttonarray) do
+    if storage.gubuttonarray then
+        for _, entry in pairs(storage.gubuttonarray) do
             if entry and entry[7] then -- Has windowtocheck
                 if update_window_state(player, entry[3], entry[7]) then
                     change_one_icon(player, entry[2], entry[3], entry[4], entry[5], entry[6], entry[7])
@@ -1131,7 +1131,7 @@ end
 
 local function on_gui_opened(event)
     -- Skip if we're not properly initialized
-    if not global then 
+    if not storage then 
         logging.warning("State", "Skipping on_gui_opened - global not initialized", game.get_player(1))
         return 
     end
@@ -1140,13 +1140,13 @@ local function on_gui_opened(event)
     if not player or not player.valid then return end
     
     -- Ensure player state exists
-    if not global.player[player.index] then
+    if not storage.player[player.index] then
         setup_player(player)
     end
     
     -- Only process window states if gubuttonarray exists
-    if global.gubuttonarray then
-        for _, entry in pairs(global.gubuttonarray) do
+    if storage.gubuttonarray then
+        for _, entry in pairs(storage.gubuttonarray) do
             if entry and entry[7] then -- Has windowtocheck
                 if update_window_state(player, entry[3], entry[7]) then
                     change_one_icon(player, entry[2], entry[3], entry[4], entry[5], entry[6], entry[7])
@@ -1159,14 +1159,14 @@ end
 -- Main tick function. Now extra defensive to ensure no crashes
 local function on_tick()
     -- Skip if we're not properly initialized
-    if not global then return end
+    if not storage then return end
     
     for _, player in pairs(game.players) do
         if player and player.valid then
-            local player_state = global.player[player.index]
+            local player_state = storage.player[player.index]
             if not player_state then
                 setup_player(player)
-                player_state = global.player[player.index]
+                player_state = storage.player[player.index]
             end
             
             if player_state.checknexttick == 1 then
@@ -1233,7 +1233,7 @@ script.on_nth_tick(6, function()
 end)
 
 script.on_event(defines.events.on_runtime_mod_setting_changed, on_player_configuration_changed)
-script.on_event({defines.events.on_gui_closed, defines.events.on_gui_confirmed, defines.events.on_gui_opened, on_player_display_resolution_changed, defines.events.on_player_changed_surface, defines.events.on_player_created}, general_update_event)
+script.on_event({defines.events.on_gui_closed, defines.events.on_gui_confirmed, defines.events.on_gui_opened, defines.events.on_player_display_resolution_changed, defines.events.on_player_changed_surface, defines.events.on_player_created}, general_update_event)
 script.on_event(defines.events.on_player_joined_game, on_player_joined)
 script.on_event(defines.events.on_gui_click, on_gui_click)
 script.on_event(defines.events.on_player_cursor_stack_changed, on_player_cursor_stack_changed)
